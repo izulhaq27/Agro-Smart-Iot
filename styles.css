@@ -360,10 +360,13 @@ h1 {
 /* Mobile */
 @media (max-width: 640px) {
     body {
-        padding: 1rem 0.75rem;
+        background-attachment: scroll;
+        padding: 1rem 0.75rem 2rem; /* Balanced padding */
+        align-items: flex-start;
     }
     .app-container {
         gap: 1rem;
+        width: 100%;
     }
     .dashboard {
         grid-template-columns: repeat(2, 1fr);
