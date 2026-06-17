@@ -1,5 +1,5 @@
 const BLYNK_TOKEN = "EDraUDvtSJBZxqZD8znQnwuBH7XfNJkF";
-const API_URL = `https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&V0&V1&V2`;
+const API_URL = `https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&V0&V1&V2&V3`;
 const THRESHOLD = 1800; // Sesuai dengan kode Arduino
 
 // State
@@ -127,45 +127,20 @@ function updateUI(data) {
     humChart.updateSeries([humPct]);
     soilChart.updateSeries([soilPct]);
 
-    // Pump Logic Simulation (4s ON, 5s OFF to match ESP32)
-    if (currentSoil > THRESHOLD) {
-        if (!window.isPumpBlinking) {
-            window.isPumpBlinking = true;
-            
-            function runPumpCycle() {
-                if (!window.isPumpBlinking) return;
-                
-                // State: ON (4 seconds)
-                elPump.textContent = 'ON';
-                elPump.className = 'pump-status on';
-                elPumpDesc.textContent = 'Pompa menyala (4 dtk)...';
-                iconPump.className = 'icon-wrapper green';
-                
-                window.pumpTimeout = setTimeout(() => {
-                    if (!window.isPumpBlinking) return;
-                    
-                    // State: OFF (5 seconds)
-                    elPump.textContent = 'OFF';
-                    elPump.className = 'pump-status off';
-                    elPumpDesc.textContent = 'Pompa istirahat (5 dtk)...';
-                    iconPump.className = 'icon-wrapper red';
-                }, 4000);
-            }
-            
-            runPumpCycle();
-            window.pumpInterval = setInterval(runPumpCycle, 9000);
-        }
+    // Pump Logic Real from Hardware (V3)
+    const pumpState = parseInt(data.V3); // 1 for ON, 0 for OFF
+    
+    // Check if V3 is sent by ESP32, if not fallback to 0
+    if (pumpState === 1) {
+        elPump.textContent = 'ON';
+        elPump.className = 'pump-status on';
+        elPumpDesc.textContent = 'Pompa menyala menyiram tanaman.';
+        iconPump.className = 'icon-wrapper green';
     } else {
-        if (window.isPumpBlinking || window.isPumpBlinking === undefined) {
-            window.isPumpBlinking = false;
-            clearInterval(window.pumpInterval);
-            clearTimeout(window.pumpTimeout);
-            
-            elPump.textContent = 'OFF';
-            elPump.className = 'pump-status off';
-            elPumpDesc.textContent = 'Kelembaban cukup. Pompa mati.';
-            iconPump.className = 'icon-wrapper red';
-        }
+        elPump.textContent = 'OFF';
+        elPump.className = 'pump-status off';
+        elPumpDesc.textContent = 'Pompa sedang mati/istirahat.';
+        iconPump.className = 'icon-wrapper red';
     }
 
     // Update Timestamp
