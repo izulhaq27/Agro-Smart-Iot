@@ -1,5 +1,6 @@
 const BLYNK_TOKEN = "EDraUDvtSJBZxqZD8znQnwuBH7XfNJkF";
 const API_URL = `https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&V0&V1&V2&V3`;
+const STATUS_URL = `https://blynk.cloud/external/api/isHardwareConnected?token=${BLYNK_TOKEN}`;
 const THRESHOLD = 1800; // Sesuai dengan kode Arduino
 
 // State
@@ -151,14 +152,24 @@ function updateUI(data) {
 // Fetch Data Function
 async function fetchData() {
     try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Network response was not ok');
+        const [dataResponse, statusResponse] = await Promise.all([
+            fetch(API_URL),
+            fetch(STATUS_URL)
+        ]);
         
-        const data = await response.json();
+        if (!dataResponse.ok || !statusResponse.ok) throw new Error('Network response was not ok');
+        
+        const data = await dataResponse.json();
+        const isHardwareOnline = await statusResponse.json();
         
         // Update connection status
-        statusBadge.className = 'status-badge connected';
-        statusText.textContent = 'Terhubung';
+        if (isHardwareOnline) {
+            statusBadge.className = 'status-badge connected';
+            statusText.textContent = 'Terhubung';
+        } else {
+            statusBadge.className = 'status-badge error';
+            statusText.textContent = 'Alat Offline';
+        }
         
         updateUI(data);
     } catch (error) {
